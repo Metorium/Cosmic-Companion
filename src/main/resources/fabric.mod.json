@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "cosmic-companion",
+	"version": "${version}",
+	"name": "Cosmic Companion",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Metorium"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/cosmic-companion/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.relichunter.RelicHunter"
+		],
+		"client": [
+			"com.relichunter.client.RelicHunterClient"
+		]
+	},
+	"mixins": [
+		"relic-hunter.mixins.json",
+		{
+			"config": "relic-hunter.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

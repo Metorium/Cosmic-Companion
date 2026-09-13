@@ -1,0 +1,142 @@
+buildscript {
+	repositories {
+		maven {
+			name = "Fabric"
+			url = "https://maven.fabricmc.net/"
+		}
+		mavenCentral()
+	}
+
+	dependencies {
+		classpath "net.fabricmc:fabric-loom:${loom_version}"
+	}
+}
+
+plugins {
+	id 'maven-publish'
+}
+
+apply plugin: 'net.fabricmc.fabric-loom-remap'
+
+version = project.mod_version
+group = project.group
+
+base {
+	archivesName = "cosmic-companion"
+}
+
+repositories {
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"cosmic-companion" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings loom.officialMojangMappings()
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+processResources {
+	def version = project.version
+	inputs.property "version", version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+// Automatically increase the patch version whenever the project is built.
+// Example: 1.0.0 -> 1.0.1 -> 1.0.2
+
+def incrementModVersion() {
+	def propertiesFile = file("gradle.properties")
+	def properties = new Properties()
+
+	propertiesFile.withInputStream { input ->
+		properties.load(input)
+	}
+
+	def currentVersion = properties.getProperty("mod_version")
+
+	if (currentVersion == null) {
+		throw new GradleException("mod_version was not found in gradle.properties")
+	}
+
+	def parts = currentVersion.split("\\.")
+
+	if (parts.length != 3) {
+		throw new GradleException(
+				"mod_version must use the format MAJOR.MINOR.PATCH, for example 1.0.0"
+		)
+	}
+
+	def major = parts[0].toInteger()
+	def minor = parts[1].toInteger()
+	def patch = parts[2].toInteger()
+
+	patch++
+
+	def newVersion = "${major}.${minor}.${patch}"
+
+	properties.setProperty("mod_version", newVersion)
+
+	propertiesFile.withOutputStream { output ->
+		properties.store(output, null)
+	}
+
+	project.version = newVersion
+
+	println("")
+	println("========================================")
+	println(" Mod version updated")
+	println(" ${currentVersion} -> ${newVersion}")
+	println("========================================")
+	println("")
+}
+
+tasks.named("build") {
+	doFirst {
+		incrementModVersion()
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 21
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+	def projectName = project.name
+	inputs.property "projectName", projectName
+
+	from("LICENSE") {
+		rename { "${it}_$projectName" }
+	}
+}
+
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			from components.java
+		}
+	}
+
+	repositories {
+	}
+}
